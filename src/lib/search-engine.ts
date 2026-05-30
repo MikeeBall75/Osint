@@ -87,6 +87,11 @@ function extractValue(data: unknown, path: string): unknown {
     const part = parts[i];
     if (current === null || current === undefined) return undefined;
     if (Array.isArray(current)) {
+      const index = Number(part);
+      if (!isNaN(index)) {
+        current = current[index];
+        continue;
+      }
       const remainingPath = parts.slice(i).join(".");
       return current.map((item) => extractValue(item, remainingPath));
     }

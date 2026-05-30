@@ -20,7 +20,7 @@ interface SearchResult {
 }
 
 export default function SearchPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [queryType, setQueryType] = useState<"email" | "phone">("email");
@@ -57,6 +57,7 @@ export default function SearchPage() {
 
       setResults(data.results);
       setCreditsRemaining(data.creditsRemaining);
+      await update();
     } catch {
       setError("Network error. Please try again.");
     } finally {

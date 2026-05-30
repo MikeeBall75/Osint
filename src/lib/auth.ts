@@ -38,7 +38,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = (user as unknown as { role: string }).role;
         token.credits = (user as unknown as { credits: number }).credits;
@@ -46,7 +46,8 @@ export const authOptions: NextAuthOptions = {
         token.creditsRefreshedAt = Date.now();
       } else if (
         token.id &&
-        (!token.creditsRefreshedAt ||
+        (trigger === "update" ||
+          !token.creditsRefreshedAt ||
           Date.now() - (token.creditsRefreshedAt as number) > 60_000)
       ) {
         const dbUser = await prisma.user.findUnique({
