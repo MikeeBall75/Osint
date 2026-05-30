@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  passwordHash     String
+  role             String   @default("USER")
+  credits          Int      @default(0)
+  stripeCustomerId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  searches          SearchQuery[]
+  creditTransactions CreditTransaction[]
+}
+
+model ApiIntegration {
+  id               String  @id @default(cuid())
+  name             String
+  description      String?
+  type             String // "email" | "phone" | "both"
+  baseUrl          String
+  headers          String  @default("{}") // JSON string
+  endpointTemplate String
+  responseMapping  String  @default("{}") // JSON string
+  enabled          Boolean @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SearchQuery {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  queryType String // "email" | "phone"
+  results   String   @default("[]") // JSON string
+  sources   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model CreditTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Int
+  type            String // "PURCHASE" | "USAGE" | "BONUS"
+  description     String?
+  stripeSessionId String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
