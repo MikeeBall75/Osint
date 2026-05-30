@@ -22,9 +22,13 @@ export async function executeSearch(
       const headers: Record<string, string> = JSON.parse(
         integration.headers || "{}"
       );
-      const endpoint = integration.endpointTemplate.replace(
+      let endpoint = integration.endpointTemplate.replace(
         /\{\{query\}\}/g,
         encodeURIComponent(query)
+      );
+      endpoint = endpoint.replace(
+        /\{\{env\.([A-Z_][A-Z0-9_]*)\}\}/g,
+        (_match, varName) => process.env[varName] ?? ""
       );
       const url = `${integration.baseUrl}${endpoint}`;
 
