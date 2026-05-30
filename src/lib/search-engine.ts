@@ -83,10 +83,12 @@ function applyMapping(
 function extractValue(data: unknown, path: string): unknown {
   const parts = path.replace(/^\$\./, "").split(".");
   let current: unknown = data;
-  for (const part of parts) {
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
     if (current === null || current === undefined) return undefined;
     if (Array.isArray(current)) {
-      return current.map((item) => extractValue(item, parts.slice(1).join(".")));
+      const remainingPath = parts.slice(i).join(".");
+      return current.map((item) => extractValue(item, remainingPath));
     }
     current = (current as Record<string, unknown>)[part];
   }

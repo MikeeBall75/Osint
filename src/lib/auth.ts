@@ -43,6 +43,21 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as unknown as { role: string }).role;
         token.credits = (user as unknown as { credits: number }).credits;
         token.id = user.id;
+        token.creditsRefreshedAt = Date.now();
+      } else if (
+        token.id &&
+        (!token.creditsRefreshedAt ||
+          Date.now() - (token.creditsRefreshedAt as number) > 60_000)
+      ) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { credits: true, role: true },
+        });
+        if (dbUser) {
+          token.credits = dbUser.credits;
+          token.role = dbUser.role;
+        }
+        token.creditsRefreshedAt = Date.now();
       }
       return token;
     },

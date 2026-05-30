@@ -28,23 +28,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    // Atomically deduct credit — prevents race conditions / negative balances
+    const deducted = await prisma.user.updateMany({
+      where: { id: session.user.id, credits: { gte: 1 } },
+      data: { credits: { decrement: 1 } },
     });
 
-    if (!user || user.credits < 1) {
+    if (deducted.count === 0) {
       return NextResponse.json(
         { error: "Insufficient credits. Please purchase more credits." },
         { status: 402 }
       );
     }
-
-    const results = await executeSearch(query, queryType);
-
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { credits: { decrement: 1 } },
-    });
 
     await prisma.creditTransaction.create({
       data: {
@@ -54,6 +49,8 @@ export async function POST(req: NextRequest) {
         description: `Search: ${queryType} - ${query}`,
       },
     });
+
+    const results = await executeSearch(query, queryType);
 
     const searchRecord = await prisma.searchQuery.create({
       data: {
@@ -65,10 +62,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { credits: true },
+    });
+
     return NextResponse.json({
       id: searchRecord.id,
       results,
-      creditsRemaining: user.credits - 1,
+      creditsRemaining: user?.credits ?? 0,
     });
   } catch (error) {
     console.error("Search error:", error);
